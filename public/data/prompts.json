@@ -1,0 +1,150 @@
+{
+  "categories": [
+    {
+      "id": "image",
+      "label_pt": "Imagem (Midjourney / DALL-E / Flux)",
+      "label_en": "Image (Midjourney / DALL-E / Flux)",
+      "icon": "🖼️"
+    },
+    {
+      "id": "text",
+      "label_pt": "Texto (ChatGPT / Claude / Gemini)",
+      "label_en": "Text (ChatGPT / Claude / Gemini)",
+      "icon": "💬"
+    },
+    {
+      "id": "video",
+      "label_pt": "Vídeo (Sora / Runway / Veo)",
+      "label_en": "Video (Sora / Runway / Veo)",
+      "icon": "🎬"
+    },
+    {
+      "id": "code",
+      "label_pt": "Código (Cursor / GitHub Copilot)",
+      "label_en": "Code (Cursor / GitHub Copilot)",
+      "icon": "💻"
+    }
+  ],
+  "prompts": [
+    {
+      "id": 1,
+      "category": "image",
+      "tool": "Midjourney",
+      "title_pt": "Pôr do sol na praia",
+      "title_en": "Sunset on the beach",
+      "prompt_pt": "Uma praia tropical ao pôr do sol, céu em tons de laranja e roxo, palmeiras ao fundo, ondas suaves, luz dourada refletindo na areia, estilo fotorrealista, câmera Sony A7R IV, f/2.8, ISO 100",
+      "prompt_en": "A tropical beach at sunset, sky in orange and purple tones, palm trees in the background, gentle waves, golden light reflecting on the sand, photorealistic style, Sony A7R IV camera, f/2.8, ISO 100",
+      "tags": ["natureza", "fotografia", "viagem"]
+    },
+    {
+      "id": 2,
+      "category": "image",
+      "tool": "Midjourney",
+      "title_pt": "Personagem guerreira futurista",
+      "title_en": "Futuristic warrior character",
+      "prompt_pt": "Uma guerreira cyberpunk com armadura neon, cabelo branco, olhos brilhantes azuis, cidade futurista ao fundo com arranha-céus iluminados, chuva, estilo anime cinematográfico, ultra detalhe, 8K",
+      "prompt_en": "A cyberpunk warrior with neon armor, white hair, glowing blue eyes, futuristic city in the background with lit skyscrapers, rain, cinematic anime style, ultra detail, 8K",
+      "tags": ["personagem", "sci-fi", "anime"]
+    },
+    {
+      "id": 3,
+      "category": "image",
+      "tool": "DALL-E 3",
+      "title_pt": "Logo minimalista para startup",
+      "title_en": "Minimalist startup logo",
+      "prompt_pt": "Logo minimalista para uma startup de tecnologia, ícone abstrato geométrico em gradiente azul e roxo, fundo branco, estilo flat design moderno, linhas limpas, profissional",
+      "prompt_en": "Minimalist logo for a technology startup, abstract geometric icon in blue and purple gradient, white background, modern flat design style, clean lines, professional",
+      "tags": ["logo", "design", "startup"]
+    },
+    {
+      "id": 4,
+      "category": "image",
+      "tool": "Flux",
+      "title_pt": "Café aconchegante no inverno",
+      "title_en": "Cozy winter café",
+      "prompt_pt": "Interior de um café aconchegante no inverno, lareira acesa, mesas de madeira, xícaras de café fumegantes, luz âmbar quente, neve do lado de fora da janela, estilo fotografia de interiores, Leica Q2",
+      "prompt_en": "Interior of a cozy winter café, lit fireplace, wooden tables, steaming coffee cups, warm amber light, snow outside the window, interior photography style, Leica Q2",
+      "tags": ["ambiente", "café", "fotografia"]
+    },
+    {
+      "id": 5,
+      "category": "text",
+      "tool": "ChatGPT",
+      "title_pt": "Email de vendas persuasivo",
+      "title_en": "Persuasive sales email",
+      "prompt_pt": "Você é um copywriter especialista em vendas. Escreva um email de vendas persuasivo para [produto/serviço], focando nos benefícios emocionais, usando a técnica PAS (Problema, Agitação, Solução). Tom: profissional mas próximo. Máximo 200 palavras. Inclua CTA claro.",
+      "prompt_en": "You are an expert sales copywriter. Write a persuasive sales email for [product/service], focusing on emotional benefits, using the PAS technique (Problem, Agitation, Solution). Tone: professional but approachable. Maximum 200 words. Include a clear CTA.",
+      "tags": ["vendas", "email", "copywriting"]
+    },
+    {
+      "id": 6,
+      "category": "text",
+      "tool": "Claude",
+      "title_pt": "Análise de mercado detalhada",
+      "title_en": "Detailed market analysis",
+      "prompt_pt": "Aja como um consultor de negócios sênior com 20 anos de experiência. Faça uma análise completa do mercado de [setor], incluindo: tendências atuais, principais players, oportunidades inexploradas, ameaças, e 3 recomendações estratégicas. Use dados e seja específico.",
+      "prompt_en": "Act as a senior business consultant with 20 years of experience. Conduct a complete analysis of the [sector] market, including: current trends, key players, unexplored opportunities, threats, and 3 strategic recommendations. Use data and be specific.",
+      "tags": ["negócios", "análise", "estratégia"]
+    },
+    {
+      "id": 7,
+      "category": "text",
+      "tool": "Gemini",
+      "title_pt": "Roteiro para vídeo viral",
+      "title_en": "Script for viral video",
+      "prompt_pt": "Crie um roteiro para um vídeo curto (60 segundos) sobre [tema] para o TikTok/Reels. Estrutura: gancho nos primeiros 3 segundos, desenvolvimento com valor real, call-to-action no final. Tom: dinâmico, autêntico, sem ser forçado. Inclua sugestões de cortes e transições.",
+      "prompt_en": "Create a script for a short video (60 seconds) about [topic] for TikTok/Reels. Structure: hook in the first 3 seconds, development with real value, call-to-action at the end. Tone: dynamic, authentic, not forced. Include cut and transition suggestions.",
+      "tags": ["vídeo", "roteiro", "redes sociais"]
+    },
+    {
+      "id": 8,
+      "category": "video",
+      "tool": "Sora",
+      "title_pt": "Cena de ação cinematográfica",
+      "title_en": "Cinematic action scene",
+      "prompt_pt": "Uma perseguição de carro em uma cidade futurista à noite, veículos voadores, chuva, reflexos neon no asfalto molhado, câmera em movimento dinâmico, estilo Christopher Nolan, qualidade cinematográfica 4K, 24fps",
+      "prompt_en": "A car chase in a futuristic city at night, flying vehicles, rain, neon reflections on wet asphalt, dynamic moving camera, Christopher Nolan style, 4K cinematic quality, 24fps",
+      "tags": ["ação", "cinematográfico", "sci-fi"]
+    },
+    {
+      "id": 9,
+      "category": "video",
+      "tool": "Runway",
+      "title_pt": "Transformação de produto",
+      "title_en": "Product transformation",
+      "prompt_pt": "Um produto de beleza sendo revelado através de uma animação suave com partículas douradas, fundo escuro luxuoso, iluminação de estúdio profissional, movimento lento e elegante, estilo comercial de alto padrão",
+      "prompt_en": "A beauty product being revealed through a smooth animation with golden particles, luxurious dark background, professional studio lighting, slow and elegant motion, high-end commercial style",
+      "tags": ["produto", "beleza", "publicidade"]
+    },
+    {
+      "id": 10,
+      "category": "code",
+      "tool": "Cursor",
+      "title_pt": "Componente React completo",
+      "title_en": "Complete React component",
+      "prompt_pt": "Crie um componente React para [funcionalidade] seguindo as melhores práticas: TypeScript, hooks modernos, tratamento de erros, loading states, acessibilidade (ARIA), e testes unitários com Jest. Inclua comentários explicativos e documentação JSDoc.",
+      "prompt_en": "Create a React component for [feature] following best practices: TypeScript, modern hooks, error handling, loading states, accessibility (ARIA), and unit tests with Jest. Include explanatory comments and JSDoc documentation.",
+      "tags": ["react", "typescript", "frontend"]
+    },
+    {
+      "id": 11,
+      "category": "code",
+      "tool": "GitHub Copilot",
+      "title_pt": "API REST com autenticação",
+      "title_en": "REST API with authentication",
+      "prompt_pt": "Crie uma API REST em Node.js com Express para [funcionalidade]. Inclua: autenticação JWT, validação de dados com Zod, middleware de rate limiting, tratamento de erros padronizado, logging, e documentação Swagger. Seguir padrões REST e boas práticas de segurança.",
+      "prompt_en": "Create a REST API in Node.js with Express for [feature]. Include: JWT authentication, data validation with Zod, rate limiting middleware, standardized error handling, logging, and Swagger documentation. Follow REST standards and security best practices.",
+      "tags": ["backend", "api", "nodejs"]
+    },
+    {
+      "id": 12,
+      "category": "image",
+      "tool": "Midjourney",
+      "title_pt": "Paisagem de fantasia épica",
+      "title_en": "Epic fantasy landscape",
+      "prompt_pt": "Uma paisagem de fantasia épica com montanhas flutuantes, cachoeiras descendentes, floresta encantada com luz mística, dragão ao fundo, pôr do sol dramático em tons de dourado e vermelho, estilo concept art cinematográfico, ultra detalhe, 8K HDR",
+      "prompt_en": "An epic fantasy landscape with floating mountains, descending waterfalls, enchanted forest with mystical light, dragon in the background, dramatic sunset in golden and red tones, cinematic concept art style, ultra detail, 8K HDR",
+      "tags": ["fantasia", "paisagem", "épico"]
+    }
+  ]
+}

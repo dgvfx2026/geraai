@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="pt" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GeraAI — Gerador de Prompts Profissionais</title>
+  <meta name="description" content="Gere prompts profissionais para IA com qualidade absurda. Midjourney, ChatGPT, Sora e mais." />
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed', 700: '#6d28d9' },
+            surface: { DEFAULT: '#0f0f11', card: '#18181b', border: '#27272a' }
+          },
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .dark body { background: #0a0a0c; }
+
+    /* Scrollbar minimalista */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 99px; }
+
+    /* Gradiente animado no logo */
+    @keyframes gradient-flow {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    .logo-gradient {
+      background: linear-gradient(135deg, #a78bfa, #60a5fa, #34d399, #a78bfa);
+      background-size: 300% 300%;
+      animation: gradient-flow 4s ease infinite;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Pulsação no botão de gerar */
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
+      50% { box-shadow: 0 0 20px 5px rgba(139, 92, 246, 0.3); }
+    }
+    .btn-generate:not(:disabled):hover { animation: pulse-glow 2s infinite; }
+
+    /* Fade in suave */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.35s ease forwards; }
+
+    /* Spinner */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin 0.8s linear infinite; }
+
+    /* Nav ativo */
+    .nav-item.active { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+    .nav-item.active .nav-icon { color: #a78bfa; }
+
+    /* Card hover */
+    .prompt-card:hover { border-color: rgba(139, 92, 246, 0.5); background: rgba(139, 92, 246, 0.05); }
+
+    /* Tabs */
+    .tab-btn.active { background: #8b5cf6; color: white; }
+
+    /* Toast */
+    #toast { transition: all 0.3s ease; }
+
+    /* Mobile sidebar overlay */
+    #sidebar-overlay { display: none; }
+    @media (max-width: 768px) {
+      #sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
+      #sidebar.open { transform: translateX(0); }
+      #sidebar-overlay.show { display: block; }
+    }
+
+    /* Score bar */
+    .score-bar { transition: width 1s ease; }
+  </style>
+</head>
+
+<body class="dark bg-[#0a0a0c] text-zinc-100 min-h-screen flex flex-col">
+
+<!-- ══════════════════════════════════════════════════════════════
+     HEADER
+════════════════════════════════════════════════════════════════ -->
+<header class="sticky top-0 z-40 border-b border-zinc-800/60 bg-[#0a0a0c]/80 backdrop-blur-xl">
+  <div class="flex items-center justify-between h-14 px-4 max-w-screen-2xl mx-auto">
+    <!-- Left: hamburger + logo -->
+    <div class="flex items-center gap-3">
+      <button id="hamburger" class="md:hidden p-2 rounded-lg hover:bg-zinc-800 transition-colors" aria-label="Menu">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+      <a href="#" class="flex items-center gap-2 font-bold text-xl select-none">
+        <span class="text-2xl">⚡</span>
+        <span class="logo-gradient">GeraAI</span>
+      </a>
+    </div>
+
+    <!-- Right: lang toggle + theme -->
+    <div class="flex items-center gap-2">
+      <!-- Language toggle -->
+      <div class="flex items-center bg-zinc-900 border border-zinc-700 rounded-lg p-0.5 text-sm">
+        <button id="btn-pt" onclick="setLang('pt')" class="lang-btn px-3 py-1 rounded-md font-medium transition-all">🇧🇷 PT</button>
+        <button id="btn-en" onclick="setLang('en')" class="lang-btn px-3 py-1 rounded-md font-medium transition-all">🇺🇸 EN</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="flex flex-1 overflow-hidden">
+
+<!-- ══════════════════════════════════════════════════════════════
+     SIDEBAR OVERLAY (mobile)
+════════════════════════════════════════════════════════════════ -->
+<div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-30" onclick="closeSidebar()"></div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SIDEBAR
+════════════════════════════════════════════════════════════════ -->
+<aside id="sidebar" class="fixed md:relative z-40 md:z-auto w-60 h-[calc(100vh-3.5rem)] top-14 md:top-0 flex flex-col bg-[#0f0f12] border-r border-zinc-800/60 overflow-y-auto shrink-0">
+
+  <nav class="flex-1 p-3 space-y-1 pt-4">
+    <p class="text-xs font-semibold text-zinc-500 uppercase tracking-widest px-3 pb-2" data-i18n="nav_tools">Ferramentas</p>
+
+    <button class="nav-item active w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-200 hover:bg-zinc-800/60 transition-all" onclick="navigate('generator')">
+      <span class="nav-icon text-zinc-400 text-lg">⚡</span>
+      <span data-i18n="nav_generator">Gerador de Prompts</span>
+    </button>
+
+    <button class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:bg-zinc-800/60 transition-all" onclick="navigate('images')">
+      <span class="nav-icon text-zinc-400 text-lg">🖼️</span>
+      <span data-i18n="nav_images">Gerador de Imagens</span>
+      <span class="ml-auto text-[10px] bg-brand-600/20 text-brand-400 border border-brand-600/30 px-1.5 py-0.5 rounded-full font-semibold">Nano Banana 2</span>
+    </button>
+
+    <button class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:bg-zinc-800/60 transition-all" onclick="navigate('library')">
+      <span class="nav-icon text-zinc-400 text-lg">📚</span>
+      <span data-i18n="nav_library">Biblioteca</span>
+    </button>
+
+    <button class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:bg-zinc-800/60 transition-all" onclick="navigate('optimizer')">
+      <span class="nav-icon text-zinc-400 text-lg">⚙️</span>
+      <span data-i18n="nav_optimizer">Otimizador</span>
+    </button>
+
+    <div class="pt-2">
+      <p class="text-xs font-semibold text-zinc-500 uppercase tracking-widest px-3 pb-2" data-i18n="nav_personal">Pessoal</p>
+    </div>
+
+    <button class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:bg-zinc-800/60 transition-all" onclick="navigate('favorites')">
+      <span class="nav-icon text-zinc-400 text-lg">❤️</span>
+      <span data-i18n="nav_favorites">Favoritos</span>
+    </button>
+
+    <button class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:bg-zinc-800/60 transition-all" onclick="navigate('history')">
+      <span class="nav-icon text-zinc-400 text-lg">🕒</span>
+      <span data-i18n="nav_history">Histórico</span>
+    </button>
+  </nav>
+
+  <!-- Footer da sidebar -->
+  <div class="p-4 border-t border-zinc-800/60">
+    <div class="text-xs text-zinc-500 text-center">
+      Powered by <span class="text-brand-400 font-semibold">Gemini 3.1</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ══════════════════════════════════════════════════════════════
+     MAIN CONTENT
+════════════════════════════════════════════════════════════════ -->
+<main class="flex-1 overflow-y-auto">
+
+  <!-- ── SEÇÃO: GERADOR ──────────────────────────────────────── -->
+  <section id="section-generator" class="section-page max-w-3xl mx-auto px-4 py-8">
+
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-white mb-2" data-i18n="gen_title">Gere prompts profissionais</h1>
+      <p class="text-zinc-400" data-i18n="gen_subtitle">Descreva sua ideia e a IA entrega um prompt completo e pronto para usar.</p>
+    </div>
+
+    <!-- Formulário -->
+    <div class="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 space-y-5">
+
+      <!-- Ideia -->
+      <div>
+        <label class="block text-sm font-medium text-zinc-300 mb-2" data-i18n="gen_idea_label">Sua ideia</label>
+        <textarea id="idea-input"
+          class="w-full bg-zinc-800/60 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 resize-none transition-all text-sm leading-relaxed"
+          rows="3"
+          data-i18n-placeholder="gen_idea_placeholder"
+          placeholder="Ex: uma mulher guerreira no Japão feudal, ao pôr do sol, estilo anime..."></textarea>
+      </div>
+
+      <!-- Linha: categoria + estilo -->
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-zinc-300 mb-2" data-i18n="gen_category_label">Ferramenta de destino</label>
+          <select id="category-select" class="w-full bg-zinc-800/60 border border-zinc-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500 transition-all">
+            <option value="image">🖼️ <span data-i18n="cat_image">Imagem (Midjourney / DALL-E)</span></option>
+            <option value="text">💬 <span data-i18n="cat_text">Texto (ChatGPT / Claude)</span></option>
+            <option value="video">🎬 <span data-i18n="cat_video">Vídeo (Sora / Runway)</span></option>
+            <option value="code">💻 <span data-i18n="cat_code">Código (Cursor / Copilot)</span></option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-zinc-300 mb-2" data-i18n="gen_style_label">Estilo</label>
+          <select id="style-select" class="w-full bg-zinc-800/60 border border-zinc-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500 transition-all">
+            <option value="none" data-i18n="style_none">Sem estilo específico</option>
+            <option value="Realistic / Fotorrealista">📷 Fotorrealista</option>
+            <option value="Cinematic / Cinematográfico">🎬 Cinematográfico</option>
+            <option value="Anime / Anime style">🎌 Anime</option>
+            <option value="Digital Art / Arte digital">🎨 Arte Digital</option>
+            <option value="Minimalist / Minimalista">⬜ Minimalista</option>
+            <option value="3D Render / Renderização 3D">🧊 3D / CGI</option>
+            <option value="Watercolor / Aquarela">🖌️ Aquarela</option>
+            <option value="Dark Fantasy / Fantasia sombria">🌑 Dark Fantasy</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Profundidade -->
+      <div>
+        <label class="block text-sm font-medium text-zinc-300 mb-3" data-i18n="gen_depth_label">Nível de detalhamento</label>
+        <div class="grid grid-cols-3 gap-2">
+          <button class="depth-btn py-2.5 px-3 rounded-xl border border-zinc-700 text-sm font-medium text-zinc-400 hover:border-brand-500/50 hover:text-white transition-all text-center" data-depth="basic">
+            <span class="block text-lg mb-0.5">🌱</span>
+            <span data-i18n="depth_basic">Básico</span>
+          </button>
+          <button class="depth-btn active py-2.5 px-3 rounded-xl border border-brand-500 bg-brand-600/20 text-sm font-medium text-brand-300 transition-all text-center" data-depth="professional">
+            <span class="block text-lg mb-0.5">🚀</span>
+            <span data-i18n="depth_professional">Profissional</span>
+          </button>
+          <button class="depth-btn py-2.5 px-3 rounded-xl border border-zinc-700 text-sm font-medium text-zinc-400 hover:border-brand-500/50 hover:text-white transition-all text-center" data-depth="ultra">
+            <span class="block text-lg mb-0.5">💎</span>
+            <span data-i18n="depth_ultra">Ultra</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Botão Gerar -->
+      <button id="btn-generate"
+        class="btn-generate w-full py-3.5 rounded-xl font-bold text-white text-sm bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+        onclick="handleGenerate()">
+        <span id="btn-generate-icon">⚡</span>
+        <span id="btn-generate-text" data-i18n="btn_generate">Gerar Prompt</span>
+      </button>
+    </div>
+
+    <!-- Resultado -->
+    <div id="result-box" class="hidden mt-6 fade-in">
+      <div class="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden">
+
+        <!-- Header do resultado -->
+        <div class="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
+          <h3 class="font-bold text-white" data-i18n="result_title">Prompt gerado ✨</h3>
+          <div class="flex items-center gap-2">
+            <button onclick="toggleFavorite()" id="btn-fav" class="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-red-400 transition-all" title="Favoritar">❤️</button>
+            <button onclick="copyResult()" class="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-xs font-medium text-zinc-300 transition-all">
+              <span>📋</span> <span data-i18n="btn_copy">Copiar</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tabs PT / EN -->
+        <div class="flex border-b border-zinc-800 px-5 pt-3 gap-1">
+          <button class="tab-btn active px-4 py-1.5 rounded-lg text-sm font-medium transition-all" onclick="switchTab('pt')">🇧🇷 Português</button>
+          <button class="tab-btn px-4 py-1.5 rounded-lg text-sm font-medium text-zinc-400 hover:text-white transition-all" onclick="switchTab('en')">🇺🇸 English</button>
+        </div>
+
+        <!-- Conteúdo do prompt -->
+        <div class="p-5">
+          <div id="prompt-pt" class="text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap"></div>
+          <div id="prompt-en" class="hidden text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap"></div>
+        </div>
+
+        <!-- Dicas -->
+        <div id="tips-box" class="px-5 pb-5">
+          <p class="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3" data-i18n="tips_title">💡 Dicas profissionais</p>
+          <ul id="tips-list" class="space-y-2"></ul>
+        </div>
+
+        <!-- Ação: Enviar para Gerador de Imagens -->
+        <div id="send-to-image-box" class="px-5 pb-5 hidden">
+          <button onclick="sendToImageGenerator()" class="w-full py-2.5 rounded-xl border border-brand-600/40 bg-brand-600/10 text-brand-300 text-sm font-medium hover:bg-brand-600/20 transition-all">
+            🖼️ <span data-i18n="btn_send_to_images">Gerar imagem com este prompt</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ── SEÇÃO: IMAGENS ──────────────────────────────────────── -->
+  <section id="section-images" class="section-page hidden max-w-3xl mx-auto px-4 py-8">
+
+    <div class="mb-8">
+      <div class="flex items-center gap-3 mb-2">
+        <h1 class="text-3xl font-bold text-white" data-i18n="img_title">Gerador de Imagens</h1>
+        <span class="text-xs bg-brand-600/20 text-brand-400 border border-brand-600/30 px-2 py-1 rounded-full font-semibold">🍌 Nano Banana 2</span>
+      </div>
+      <p class="text-zinc-400" data-i18n="img_subtitle">Gere imagens de alta qualidade com Gemini 3.1 Flash Image — o melhor modelo de imagem do Google.</p>
+    </div>
+
+    <div class="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-zinc-300 mb-2" data-i18n="img_prompt_label">Prompt da imagem</label>
+        <textarea id="image-prompt-input"
+          class="w-full bg-zinc-800/60 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 resize-none transition-all text-sm leading-relaxed"
+          rows="4"
+          placeholder="Descreva a imagem que deseja criar... / Describe the image you want to create..."></textarea>
+        <p class="text-xs text-zinc-500 mt-1.5" data-i18n="img_prompt_tip">💡 Dica: use o Gerador de Prompts primeiro para obter melhores resultados.</p>
+      </div>
+
+      <button id="btn-generate-image"
+        class="btn-generate w-full py-3.5 rounded-xl font-bold text-white text-sm bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+        onclick="handleGenerateImage()">
+        <span>🖼️</span>
+        <span id="btn-img-text" data-i18n="btn_generate_image">Gerar Imagem</span>
+      </button>
+    </div>
+
+    <!-- Imagem gerada -->
+    <div id="image-result-box" class="hidden mt-6 fade-in">
+      <div class="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
+          <h3 class="font-bold text-white" data-i18n="img_result_title">Imagem gerada ✨</h3>
+          <button id="btn-download" class="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-xs font-medium text-zinc-300 transition-all">
+            <span>⬇️</span> <span data-i18n="btn_download">Download</span>
+          </button>
+        </div>
+        <div class="p-5 flex justify-center">
+          <img id="generated-image" class="max-w-full rounded-xl" alt="Imagem gerada" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Histórico de imagens -->
+    <div class="mt-8">
+      <h3 class="text-sm font-semibold text-zinc-400 mb-4" data-i18n="img_history_title">🕒 Últimas imagens geradas</h3>
+      <div id="image-history-grid" class="grid grid-cols-2 gap-3"></div>
+      <p id="image-history-empty" class="text-sm text-zinc-600 text-center py-6" data-i18n="img_history_empty">Nenhuma imagem gerada ainda.</p>
+    </div>
+
+  </section>
+
+  <!-- ── SEÇÃO: BIBLIOTECA ───────────────────────────────────── -->
+  <section id="section-library" class="section-page hidden max-w-4xl mx-auto px-4 py-8">
+
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-white mb-2" data-i18n="lib_title">Biblioteca de Prompts</h1>
+      <p class="text-zinc-400" data-i18n="lib_subtitle">Prompts prontos e testados, organizados por categoria.</p>
+    </div>
+
+    <!-- Filtros -->
+    <div class="flex items-center gap-2 mb-6 flex-wrap">
+      <button class="lib-filter-btn active px-4 py-2 rounded-xl text-sm font-medium bg-brand-600 text-white transition-all" data-filter="all" onclick="filterLibrary('all')">
+        <span data-i18n="filter_all">Todos</span>
+      </button>
+      <button class="lib-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-zinc-800 text-zinc-400 hover:text-white transition-all" data-filter="image" onclick="filterLibrary('image')">🖼️ <span data-i18n="filter_image">Imagem</span></button>
+      <button class="lib-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-zinc-800 text-zinc-400 hover:text-white transition-all" data-filter="text" onclick="filterLibrary('text')">💬 <span data-i18n="filter_text">Texto</span></button>
+      <button class="lib-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-zinc-800 text-zinc-400 hover:text-white transition-all" data-filter="video" onclick="filterLibrary('video')">🎬 <span data-i18n="filter_video">Vídeo</span></button>
+      <button class="lib-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-zinc-800 text-zinc-400 hover:text-white transition-all" data-filter="code" onclick="filterLibrary('code')">💻 <span data-i18n="filter_code">Código</span></button>
+    </div>
+
+    <div id="library-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+  </section>
+
+  <!-- ── SEÇÃO: OTIMIZADOR ──────────────────────────────────── -->
+  <section id="section-optimizer" class="section-page hidden max-w-3xl mx-auto px-4 py-8">
+
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-white mb-2" data-i18n="opt_title">Otimizador de Prompts</h1>
+      <p class="text-zinc-400" data-i18n="opt_subtitle">Cole um prompt fraco e a IA transforma em algo profissional.</p>
+    </div>
+
+    <div class="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-zinc-300 mb-2" data-i18n="opt_input_label">Prompt original (pode ser simples)</label>
+        <textarea id="optimize-input"
+          class="w-full bg-zinc-800/60 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-brand-500 resize-none transition-all text-sm"
+          rows="4"
+          data-i18n-placeholder="opt_placeholder"
+          placeholder="Ex: uma foto de um gato..."></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-zinc-300 mb-2" data-i18n="opt_category_label">Categoria</label>
+        <select id="opt-category-select" class="w-full bg-zinc-800/60 border border-zinc-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500 transition-all">
+          <option value="image">🖼️ Imagem</option>
+          <option value="text">💬 Texto</option>
+          <option value="video">🎬 Vídeo</option>
+          <option value="code">💻 Código</option>
+        </select>
+      </div>
+
+      <button id="btn-optimize"
+        class="btn-generate w-full py-3.5 rounded-xl font-bold text-white text-sm bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+        onclick="handleOptimize()">
+        <span>⚙️</span>
+        <span id="btn-opt-text" data-i18n="btn_optimize">Otimizar Prompt</span>
+      </button>
+    </div>
+
+    <!-- Resultado -->
+    <div id="opt-result-box" class="hidden mt-6 fade-in space-y-4">
+
+      <!-- Score -->
+      <div class="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
+        <p class="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-4" data-i18n="opt_score_title">Pontuação do Prompt</p>
+        <div class="space-y-3">
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span class="text-zinc-400" data-i18n="opt_before">Antes</span>
+              <span id="score-before-label" class="text-red-400 font-bold"></span>
+            </div>
+            <div class="h-2 bg-zinc-800 rounded-full overflow-hidden">
+              <div id="score-before-bar" class="h-full bg-red-500 score-bar rounded-full" style="width:0%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span class="text-zinc-400" data-i18n="opt_after">Depois</span>
+              <span id="score-after-label" class="text-emerald-400 font-bold"></span>
+            </div>
+            <div class="h-2 bg-zinc-800 rounded-full overflow-hidden">
+              <div id="score-after-bar" class="h-full bg-emerald-500 score-bar rounded-full" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Melhorias -->
+      <div class="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
+        <p class="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3" data-i18n="opt_improvements">O que foi melhorado</p>
+        <ul id="opt-improvements" class="space-y-2"></ul>
+      </div>
+
+      <!-- Prompt otimizado -->
+      <div class="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
+          <h3 class="font-bold text-white" data-i18n="opt_result_title">Prompt otimizado ✨</h3>
+          <button onclick="copyOptimized()" class="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-xs font-medium text-zinc-300 transition-all">
+            <span>📋</span> <span data-i18n="btn_copy">Copiar</span>
+          </button>
+        </div>
+        <div class="flex border-b border-zinc-800 px-5 pt-3 gap-1">
+          <button class="opt-tab-btn active px-4 py-1.5 rounded-lg text-sm font-medium transition-all" onclick="switchOptTab('pt')">🇧🇷 Português</button>
+          <button class="opt-tab-btn px-4 py-1.5 rounded-lg text-sm font-medium text-zinc-400 hover:text-white transition-all" onclick="switchOptTab('en')">🇺🇸 English</button>
+        </div>
+        <div class="p-5">
+          <div id="opt-prompt-pt" class="text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap"></div>
+          <div id="opt-prompt-en" class="hidden text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SEÇÃO: FAVORITOS ────────────────────────────────────── -->
+  <section id="section-favorites" class="section-page hidden max-w-4xl mx-auto px-4 py-8">
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-white mb-2" data-i18n="fav_title">Favoritos</h1>
+      <p class="text-zinc-400" data-i18n="fav_subtitle">Seus prompts salvos.</p>
+    </div>
+    <div id="favorites-list" class="space-y-4"></div>
+    <div id="favorites-empty" class="hidden text-center py-16">
+      <div class="text-5xl mb-4">❤️</div>
+      <p class="text-zinc-400" data-i18n="fav_empty">Nenhum favorito ainda. Gere um prompt e salve!</p>
+    </div>
+  </section>
+
+  <!-- ── SEÇÃO: HISTÓRICO ────────────────────────────────────── -->
+  <section id="section-history" class="section-page hidden max-w-4xl mx-auto px-4 py-8">
+    <div class="mb-8 flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-white mb-2" data-i18n="hist_title">Histórico</h1>
+        <p class="text-zinc-400" data-i18n="hist_subtitle">Todos os prompts gerados.</p>
+      </div>
+      <button onclick="clearHistory()" class="text-sm text-zinc-500 hover:text-red-400 transition-colors" data-i18n="hist_clear">Limpar tudo</button>
+    </div>
+    <div id="history-list" class="space-y-4"></div>
+    <div id="history-empty" class="hidden text-center py-16">
+      <div class="text-5xl mb-4">🕒</div>
+      <p class="text-zinc-400" data-i18n="hist_empty">Nenhum prompt gerado ainda.</p>
+    </div>
+  </section>
+
+</main>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     TOAST
+════════════════════════════════════════════════════════════════ -->
+<div id="toast" class="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl bg-zinc-800 border border-zinc-700 text-sm font-medium text-white shadow-xl opacity-0 pointer-events-none transform translate-y-2 flex items-center gap-2">
+  <span id="toast-icon">✅</span>
+  <span id="toast-msg"></span>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SCRIPTS
+════════════════════════════════════════════════════════════════ -->
+<script type="module">
+import { addToHistory, getHistory, clearHistory as storeClearHistory, getFavorites, addToFavorites, removeFromFavorites, isFavorited, getLanguage, setLanguage, addImageToHistory, getImageHistory } from '/js/storage.js';
+import { generatePrompt, generateImage, optimizePrompt } from '/js/generator.js';
+
+// ─── Estado global ────────────────────────────────────────────
+let currentLang = getLanguage();
+let currentPage = 'generator';
+let currentResult = null;
+let selectedDepth = 'professional';
+let promptsData = [];
+
+// ─── i18n ─────────────────────────────────────────────────────
+const i18n = {
+  pt: {
+    nav_tools: 'Ferramentas', nav_generator: 'Gerador de Prompts', nav_images: 'Gerador de Imagens',
+    nav_library: 'Biblioteca', nav_optimizer: 'Otimizador', nav_personal: 'Pessoal',
+    nav_favorites: 'Favoritos', nav_history: 'Histórico',
+    gen_title: 'Gere prompts profissionais', gen_subtitle: 'Descreva sua ideia e a IA entrega um prompt completo e pronto para usar.',
+    gen_idea_label: 'Sua ideia', gen_idea_placeholder: 'Ex: uma mulher guerreira no Japão feudal, ao pôr do sol, estilo anime...',
+    gen_category_label: 'Ferramenta de destino', gen_style_label: 'Estilo',
+    gen_depth_label: 'Nível de detalhamento',
+    depth_basic: 'Básico', depth_professional: 'Profissional', depth_ultra: 'Ultra',
+    btn_generate: 'Gerar Prompt', btn_copy: 'Copiar', btn_send_to_images: 'Gerar imagem com este prompt',
+    result_title: 'Prompt gerado ✨', tips_title: '💡 Dicas profissionais',
+    img_title: 'Gerador de Imagens', img_subtitle: 'Gere imagens de alta qualidade com Gemini 3.1 Flash Image.',
+    img_prompt_label: 'Prompt da imagem', img_prompt_tip: '💡 Dica: use o Gerador de Prompts primeiro para melhores resultados.',
+    btn_generate_image: 'Gerar Imagem', btn_download: 'Download',
+    img_result_title: 'Imagem gerada ✨', img_history_title: '🕒 Últimas imagens', img_history_empty: 'Nenhuma imagem gerada ainda.',
+    lib_title: 'Biblioteca de Prompts', lib_subtitle: 'Prompts prontos e testados, organizados por categoria.',
+    filter_all: 'Todos', filter_image: 'Imagem', filter_text: 'Texto', filter_video: 'Vídeo', filter_code: 'Código',
+    opt_title: 'Otimizador de Prompts', opt_subtitle: 'Cole um prompt fraco e a IA transforma em algo profissional.',
+    opt_input_label: 'Prompt original (pode ser simples)', opt_placeholder: 'Ex: uma foto de um gato...',
+    opt_category_label: 'Categoria', btn_optimize: 'Otimizar Prompt',
+    opt_score_title: 'Pontuação do Prompt', opt_before: 'Antes', opt_after: 'Depois',
+    opt_improvements: 'O que foi melhorado', opt_result_title: 'Prompt otimizado ✨',
+    fav_title: 'Favoritos', fav_subtitle: 'Seus prompts salvos.', fav_empty: 'Nenhum favorito ainda. Gere um prompt e salve!',
+    hist_title: 'Histórico', hist_subtitle: 'Todos os prompts gerados.', hist_clear: 'Limpar tudo', hist_empty: 'Nenhum prompt gerado ainda.',
+    toast_copied: 'Prompt copiado!', toast_favorited: 'Adicionado aos favoritos!', toast_unfavorited: 'Removido dos favoritos.',
+    generating: 'Gerando...', style_none: 'Sem estilo específico',
+    cat_image: 'Imagem (Midjourney / DALL-E)', cat_text: 'Texto (ChatGPT / Claude)',
+    cat_video: 'Vídeo (Sora / Runway)', cat_code: 'Código (Cursor / Copilot)',
+    use_prompt: 'Usar prompt', lib_copy: 'Copiar'
+  },
+  en: {
+    nav_tools: 'Tools', nav_generator: 'Prompt Generator', nav_images: 'Image Generator',
+    nav_library: 'Library', nav_optimizer: 'Optimizer', nav_personal: 'Personal',
+    nav_favorites: 'Favorites', nav_history: 'History',
+    gen_title: 'Generate professional prompts', gen_subtitle: 'Describe your idea and the AI delivers a complete, ready-to-use prompt.',
+    gen_idea_label: 'Your idea', gen_idea_placeholder: 'E.g., a female warrior in feudal Japan, at sunset, anime style...',
+    gen_category_label: 'Target tool', gen_style_label: 'Style',
+    gen_depth_label: 'Level of detail',
+    depth_basic: 'Basic', depth_professional: 'Professional', depth_ultra: 'Ultra',
+    btn_generate: 'Generate Prompt', btn_copy: 'Copy', btn_send_to_images: 'Generate image with this prompt',
+    result_title: 'Generated prompt ✨', tips_title: '💡 Pro tips',
+    img_title: 'Image Generator', img_subtitle: 'Generate high-quality images with Gemini 3.1 Flash Image.',
+    img_prompt_label: 'Image prompt', img_prompt_tip: '💡 Tip: use the Prompt Generator first for better results.',
+    btn_generate_image: 'Generate Image', btn_download: 'Download',
+    img_result_title: 'Generated image ✨', img_history_title: '🕒 Recent images', img_history_empty: 'No images generated yet.',
+    lib_title: 'Prompt Library', lib_subtitle: 'Ready-made and tested prompts, organized by category.',
+    filter_all: 'All', filter_image: 'Image', filter_text: 'Text', filter_video: 'Video', filter_code: 'Code',
+    opt_title: 'Prompt Optimizer', opt_subtitle: 'Paste a weak prompt and AI transforms it into something professional.',
+    opt_input_label: 'Original prompt (can be simple)', opt_placeholder: 'E.g., a photo of a cat...',
+    opt_category_label: 'Category', btn_optimize: 'Optimize Prompt',
+    opt_score_title: 'Prompt Score', opt_before: 'Before', opt_after: 'After',
+    opt_improvements: 'What was improved', opt_result_title: 'Optimized prompt ✨',
+    fav_title: 'Favorites', fav_subtitle: 'Your saved prompts.', fav_empty: "No favorites yet. Generate a prompt and save it!",
+    hist_title: 'History', hist_subtitle: 'All generated prompts.', hist_clear: 'Clear all', hist_empty: 'No prompts generated yet.',
+    toast_copied: 'Prompt copied!', toast_favorited: 'Added to favorites!', toast_unfavorited: 'Removed from favorites.',
+    generating: 'Generating...', style_none: 'No specific style',
+    cat_image: 'Image (Midjourney / DALL-E)', cat_text: 'Text (ChatGPT / Claude)',
+    cat_video: 'Video (Sora / Runway)', cat_code: 'Code (Cursor / Copilot)',
+    use_prompt: 'Use prompt', lib_copy: 'Copy'
+  }
+};
+
+function t(key) { return i18n[currentLang]?.[key] || i18n.pt[key] || key; }
+
+function applyI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    el.textContent = t(key);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    el.placeholder = t(key);
+  });
+  document.documentElement.lang = currentLang;
+}
+
+window.setLang = function(lang) {
+  currentLang = lang;
+  setLanguage(lang);
+  applyI18n();
+  document.getElementById('btn-pt').classList.toggle('bg-brand-600', lang === 'pt');
+  document.getElementById('btn-pt').classList.toggle('text-white', lang === 'pt');
+  document.getElementById('btn-en').classList.toggle('bg-brand-600', lang === 'en');
+  document.getElementById('btn-en').classList.toggle('text-white', lang === 'en');
+  renderLibrary();
+  renderFavorites();
+  renderHistory();
+};
+
+// ─── Navegação ────────────────────────────────────────────────
+window.navigate = function(page) {
+  currentPage = page;
+  document.querySelectorAll('.section-page').forEach(s => s.classList.add('hidden'));
+  document.getElementById(`section-${page}`)?.classList.remove('hidden');
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.classList.remove('active');
+    btn.classList.add('text-zinc-400');
+    btn.classList.remove('text-zinc-200');
+  });
+  const activeBtn = document.querySelector(`[onclick="navigate('${page}')"]`);
+  if (activeBtn) {
+    activeBtn.classList.add('active');
+    activeBtn.classList.remove('text-zinc-400');
+    activeBtn.classList.add('text-zinc-200');
+  }
+  closeSidebar();
+
+  if (page === 'favorites') renderFavorites();
+  if (page === 'history') renderHistory();
+  if (page === 'images') renderImageHistory();
+};
+
+// ─── Sidebar mobile ───────────────────────────────────────────
+window.closeSidebar = function() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('show');
+};
+
+document.getElementById('hamburger').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebar-overlay').classList.add('show');
+});
+
+// ─── Toast ────────────────────────────────────────────────────
+function showToast(msg, icon = '✅') {
+  const toast = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  document.getElementById('toast-icon').textContent = icon;
+  toast.style.opacity = '1';
+  toast.style.transform = 'translateY(0)';
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(8px)';
+  }, 2500);
+}
+
+// ─── Depth buttons ────────────────────────────────────────────
+document.querySelectorAll('.depth-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.depth-btn').forEach(b => {
+      b.classList.remove('active', 'border-brand-500', 'bg-brand-600/20', 'text-brand-300');
+      b.classList.add('border-zinc-700', 'text-zinc-400');
+    });
+    btn.classList.add('active', 'border-brand-500', 'bg-brand-600/20', 'text-brand-300');
+    btn.classList.remove('border-zinc-700', 'text-zinc-400');
+    selectedDepth = btn.dataset.depth;
+  });
+});
+
+// ─── GERAR PROMPT ─────────────────────────────────────────────
+let currentTab = 'pt';
+let currentOptTab = 'pt';
+
+window.handleGenerate = async function() {
+  const idea = document.getElementById('idea-input').value.trim();
+  if (!idea) { showToast('Descreva sua ideia primeiro!', '⚠️'); return; }
+
+  const btn = document.getElementById('btn-generate');
+  const btnText = document.getElementById('btn-generate-text');
+  const btnIcon = document.getElementById('btn-generate-icon');
+  btn.disabled = true;
+  btnText.textContent = t('generating');
+  btnIcon.innerHTML = '<svg class="spinner w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>';
+
+  try {
+    const category = document.getElementById('category-select').value;
+    const style = document.getElementById('style-select').value;
+    const result = await generatePrompt({ idea, category, style, depth: selectedDepth });
+
+    currentResult = { id: Date.now(), idea, category, style, depth: selectedDepth, ...result };
+
+    document.getElementById('prompt-pt').textContent = result.pt;
+    document.getElementById('prompt-en').textContent = result.en;
+
+    // Tips
+    const tipsList = document.getElementById('tips-list');
+    tipsList.innerHTML = (result.tips || []).map(tip =>
+      `<li class="flex items-start gap-2 text-sm text-zinc-400">
+        <span class="text-brand-400 mt-0.5 shrink-0">→</span>
+        <span>${tip}</span>
+      </li>`
+    ).join('');
+
+    // Botão "Gerar imagem" só para categoria image
+    const sendBox = document.getElementById('send-to-image-box');
+    sendBox.classList.toggle('hidden', category !== 'image');
+
+    // Mostrar resultado
+    document.getElementById('result-box').classList.remove('hidden');
+    switchTab('pt');
+
+    // Favorito
+    const favBtn = document.getElementById('btn-fav');
+    favBtn.textContent = isFavorited(currentResult.id) ? '❤️' : '🤍';
+
+    // Histórico
+    addToHistory(currentResult);
+
+    // Scroll suave
+    document.getElementById('result-box').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  } catch (err) {
+    showToast(err.message || 'Erro ao gerar prompt.', '❌');
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = t('btn_generate');
+    btnIcon.textContent = '⚡';
+  }
+};
+
+// ─── Tabs PT/EN ───────────────────────────────────────────────
+window.switchTab = function(tab) {
+  currentTab = tab;
+  document.getElementById('prompt-pt').classList.toggle('hidden', tab !== 'pt');
+  document.getElementById('prompt-en').classList.toggle('hidden', tab !== 'en');
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', (i === 0 && tab === 'pt') || (i === 1 && tab === 'en'));
+    if (!b.classList.contains('active')) b.classList.add('text-zinc-400');
+    else b.classList.remove('text-zinc-400');
+  });
+};
+
+window.switchOptTab = function(tab) {
+  currentOptTab = tab;
+  document.getElementById('opt-prompt-pt').classList.toggle('hidden', tab !== 'pt');
+  document.getElementById('opt-prompt-en').classList.toggle('hidden', tab !== 'en');
+  document.querySelectorAll('.opt-tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', (i === 0 && tab === 'pt') || (i === 1 && tab === 'en'));
+    if (!b.classList.contains('active')) b.classList.add('text-zinc-400');
+    else b.classList.remove('text-zinc-400');
+  });
+};
+
+// ─── Copy ─────────────────────────────────────────────────────
+window.copyResult = function() {
+  const text = currentTab === 'pt'
+    ? document.getElementById('prompt-pt').textContent
+    : document.getElementById('prompt-en').textContent;
+  navigator.clipboard.writeText(text).then(() => showToast(t('toast_copied'), '📋'));
+};
+
+window.copyOptimized = function() {
+  const text = currentOptTab === 'pt'
+    ? document.getElementById('opt-prompt-pt').textContent
+    : document.getElementById('opt-prompt-en').textContent;
+  navigator.clipboard.writeText(text).then(() => showToast(t('toast_copied'), '📋'));
+};
+
+// ─── Favorito ─────────────────────────────────────────────────
+window.toggleFavorite = function() {
+  if (!currentResult) return;
+  const btn = document.getElementById('btn-fav');
+  if (isFavorited(currentResult.id)) {
+    removeFromFavorites(currentResult.id);
+    btn.textContent = '🤍';
+    showToast(t('toast_unfavorited'), '💔');
+  } else {
+    addToFavorites(currentResult);
+    btn.textContent = '❤️';
+    showToast(t('toast_favorited'), '❤️');
+  }
+};
+
+// ─── Enviar para gerador de imagens ───────────────────────────
+window.sendToImageGenerator = function() {
+  if (!currentResult) return;
+  document.getElementById('image-prompt-input').value = currentResult.en;
+  navigate('images');
+};
+
+// ─── GERAR IMAGEM ─────────────────────────────────────────────
+window.handleGenerateImage = async function() {
+  const prompt = document.getElementById('image-prompt-input').value.trim();
+  if (!prompt) { showToast('Digite um prompt para a imagem!', '⚠️'); return; }
+
+  const btn = document.getElementById('btn-generate-image');
+  const btnText = document.getElementById('btn-img-text');
+  btn.disabled = true;
+  btnText.textContent = t('generating');
+
+  try {
+    const result = await generateImage(prompt);
+    const imgSrc = `data:${result.mimeType};base64,${result.imageBase64}`;
+
+    const imgEl = document.getElementById('generated-image');
+    imgEl.src = imgSrc;
+    document.getElementById('image-result-box').classList.remove('hidden');
+
+    // Download button
+    document.getElementById('btn-download').onclick = () => {
+      const a = document.createElement('a');
+      a.href = imgSrc;
+      a.download = `geraai-${Date.now()}.png`;
+      a.click();
+    };
+
+    // Salvar no histórico
+    addImageToHistory({ prompt, src: imgSrc });
+    renderImageHistory();
+
+    imgEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } catch (err) {
+    showToast(err.message || 'Erro ao gerar imagem.', '❌');
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = t('btn_generate_image');
+  }
+};
+
+function renderImageHistory() {
+  const history = getImageHistory();
+  const grid = document.getElementById('image-history-grid');
+  const empty = document.getElementById('image-history-empty');
+  if (!history.length) { grid.innerHTML = ''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+  grid.innerHTML = history.map(item =>
+    `<div class="rounded-xl overflow-hidden border border-zinc-800 hover:border-brand-600/50 transition-all cursor-pointer group" onclick="document.getElementById('image-prompt-input').value='${item.prompt.replace(/'/g, "\\'")}'; document.getElementById('generated-image').src='${item.src}'; document.getElementById('image-result-box').classList.remove('hidden');">
+      <img src="${item.src}" class="w-full object-cover aspect-square" />
+    </div>`
+  ).join('');
+}
+
+// ─── OTIMIZADOR ───────────────────────────────────────────────
+window.handleOptimize = async function() {
+  const prompt = document.getElementById('optimize-input').value.trim();
+  if (!prompt) { showToast('Cole um prompt para otimizar!', '⚠️'); return; }
+
+  const btn = document.getElementById('btn-optimize');
+  const btnText = document.getElementById('btn-opt-text');
+  btn.disabled = true;
+  btnText.textContent = t('generating');
+
+  try {
+    const category = document.getElementById('opt-category-select').value;
+    const result = await optimizePrompt(prompt, category);
+
+    document.getElementById('opt-prompt-pt').textContent = result.optimized_pt;
+    document.getElementById('opt-prompt-en').textContent = result.optimized_en;
+
+    const before = result.score_before || 3;
+    const after = result.score_after || 9;
+    document.getElementById('score-before-label').textContent = `${before}/10`;
+    document.getElementById('score-after-label').textContent = `${after}/10`;
+    setTimeout(() => {
+      document.getElementById('score-before-bar').style.width = `${before * 10}%`;
+      document.getElementById('score-after-bar').style.width = `${after * 10}%`;
+    }, 100);
+
+    const impList = document.getElementById('opt-improvements');
+    impList.innerHTML = (result.improvements || []).map(imp =>
+      `<li class="flex items-start gap-2 text-sm text-zinc-400">
+        <span class="text-emerald-400 shrink-0">✓</span>
+        <span>${imp}</span>
+      </li>`
+    ).join('');
+
+    document.getElementById('opt-result-box').classList.remove('hidden');
+    switchOptTab('pt');
+    document.getElementById('opt-result-box').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } catch (err) {
+    showToast(err.message || 'Erro ao otimizar.', '❌');
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = t('btn_optimize');
+  }
+};
+
+// ─── BIBLIOTECA ───────────────────────────────────────────────
+let currentFilter = 'all';
+
+async function loadPrompts() {
+  try {
+    const res = await fetch('/data/prompts.json');
+    const data = await res.json();
+    promptsData = data.prompts || [];
+    renderLibrary();
+  } catch (e) { console.warn('Could not load prompts.json', e); }
+}
+
+function renderLibrary() {
+  const grid = document.getElementById('library-grid');
+  const filtered = currentFilter === 'all' ? promptsData : promptsData.filter(p => p.category === currentFilter);
+
+  grid.innerHTML = filtered.map(p => {
+    const title = currentLang === 'en' ? p.title_en : p.title_pt;
+    const promptText = currentLang === 'en' ? p.prompt_en : p.prompt_pt;
+    const catIcon = { image: '🖼️', text: '💬', video: '🎬', code: '💻' }[p.category] || '📄';
+    return `
+      <div class="prompt-card bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 transition-all">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <span class="text-xs font-medium text-zinc-500 uppercase tracking-wider">${catIcon} ${p.tool}</span>
+            <h3 class="font-bold text-white mt-1">${title}</h3>
+          </div>
+        </div>
+        <p class="text-sm text-zinc-400 leading-relaxed line-clamp-3 mb-4">${promptText}</p>
+        <div class="flex items-center gap-2">
+          <button onclick="copyLibraryPrompt('${p.id}')" class="flex-1 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-sm font-medium text-zinc-300 transition-all">
+            📋 ${t('lib_copy')}
+          </button>
+          <button onclick="useLibraryPrompt('${p.id}')" class="flex-1 py-2 rounded-xl bg-brand-600/20 border border-brand-600/30 text-brand-300 hover:bg-brand-600/30 text-sm font-medium transition-all">
+            ⚡ ${t('use_prompt')}
+          </button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+window.filterLibrary = function(filter) {
+  currentFilter = filter;
+  document.querySelectorAll('.lib-filter-btn').forEach(btn => {
+    const active = btn.dataset.filter === filter;
+    btn.classList.toggle('bg-brand-600', active);
+    btn.classList.toggle('text-white', active);
+    btn.classList.toggle('bg-zinc-800', !active);
+    btn.classList.toggle('text-zinc-400', !active);
+  });
+  renderLibrary();
+};
+
+window.copyLibraryPrompt = function(id) {
+  const p = promptsData.find(x => x.id == id);
+  if (!p) return;
+  const text = currentLang === 'en' ? p.prompt_en : p.prompt_pt;
+  navigator.clipboard.writeText(text).then(() => showToast(t('toast_copied'), '📋'));
+};
+
+window.useLibraryPrompt = function(id) {
+  const p = promptsData.find(x => x.id == id);
+  if (!p) return;
+  document.getElementById('idea-input').value = currentLang === 'en' ? p.title_en : p.title_pt;
+  document.getElementById('category-select').value = p.category;
+  navigate('generator');
+};
+
+// ─── FAVORITOS ────────────────────────────────────────────────
+function renderFavorites() {
+  const favs = getFavorites();
+  const list = document.getElementById('favorites-list');
+  const empty = document.getElementById('favorites-empty');
+  if (!favs.length) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+  list.innerHTML = favs.map(f => renderPromptCard(f, true)).join('');
+}
+
+// ─── HISTÓRICO ────────────────────────────────────────────────
+function renderHistory() {
+  const history = getHistory();
+  const list = document.getElementById('history-list');
+  const empty = document.getElementById('history-empty');
+  if (!history.length) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+  list.innerHTML = history.map(h => renderPromptCard(h, false)).join('');
+}
+
+function renderPromptCard(item, isFav) {
+  const promptText = currentLang === 'en' ? item.en : item.pt;
+  const catIcon = { image: '🖼️', text: '💬', video: '🎬', code: '💻' }[item.category] || '📄';
+  return `
+    <div class="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="text-sm text-zinc-500">${catIcon}</span>
+        <span class="text-sm font-medium text-zinc-300 flex-1 truncate">${item.idea || ''}</span>
+        <span class="text-xs text-zinc-600">${new Date(item.id).toLocaleDateString(currentLang === 'pt' ? 'pt-BR' : 'en-US')}</span>
+      </div>
+      <p class="text-sm text-zinc-400 leading-relaxed line-clamp-3 mb-4">${promptText || ''}</p>
+      <div class="flex gap-2">
+        <button onclick="navigator.clipboard.writeText(document.createTextNode('${(promptText||'').replace(/'/g,"\\'")}').nodeValue).then(()=>showToast('${t('toast_copied')}','📋'))"
+          class="flex-1 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-sm font-medium text-zinc-300 transition-all">
+          📋 ${t('btn_copy')}
+        </button>
+        ${isFav
+          ? `<button onclick="removeFromFavAndRender(${item.id})" class="py-2 px-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 text-sm transition-all">🗑️</button>`
+          : ''}
+      </div>
+    </div>`;
+}
+
+window.removeFromFavAndRender = function(id) {
+  removeFromFavorites(id);
+  renderFavorites();
+};
+
+window.clearHistory = function() {
+  if (confirm(currentLang === 'pt' ? 'Limpar todo o histórico?' : 'Clear all history?')) {
+    storeClearHistory();
+    renderHistory();
+  }
+};
+
+// Expor showToast globalmente para uso inline
+window.showToast = showToast;
+
+// ─── Init ─────────────────────────────────────────────────────
+setLang(currentLang);
+loadPrompts();
+
+</script>
+</body>
+</html>

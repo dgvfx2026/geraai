@@ -170,8 +170,10 @@ Format your response as valid JSON: { "pt": "...", "en": "...", "tips": ["tip1",
 
   const userMessage = `Generate a prompt for this idea: "${idea}"${styleNote}\n\nRemember to respond ONLY with valid JSON, no markdown, no explanation outside the JSON.`;
 
+  const MODEL = 'gemini-2.0-flash';
+
   const geminiRes = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -185,7 +187,11 @@ Format your response as valid JSON: { "pt": "...", "en": "...", "tips": ["tip1",
 
   if (!geminiRes.ok) {
     const err = await geminiRes.json();
-    return res.status(geminiRes.status).json({ error: 'Gemini API error', detail: err });
+    const detail = err?.error?.message || JSON.stringify(err);
+    return res.status(geminiRes.status).json({
+      error: `Gemini API error (${geminiRes.status}): ${detail}`,
+      detail: err
+    });
   }
 
   const geminiData = await geminiRes.json();
@@ -227,7 +233,11 @@ async function handleGenerateImage(req, res, apiKey, payload) {
 
   if (!geminiRes.ok) {
     const err = await geminiRes.json();
-    return res.status(geminiRes.status).json({ error: 'Gemini Image API error', detail: err });
+    const detail = err?.error?.message || JSON.stringify(err);
+    return res.status(geminiRes.status).json({
+      error: `Gemini Image API error (${geminiRes.status}): ${detail}`,
+      detail: err
+    });
   }
 
   const data = await geminiRes.json();
@@ -268,7 +278,7 @@ Respond ONLY with valid JSON in this format:
 Score is from 1-10. No markdown, no explanation outside JSON.`;
 
   const geminiRes = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -285,7 +295,11 @@ Score is from 1-10. No markdown, no explanation outside JSON.`;
 
   if (!geminiRes.ok) {
     const err = await geminiRes.json();
-    return res.status(geminiRes.status).json({ error: 'Gemini API error', detail: err });
+    const detail = err?.error?.message || JSON.stringify(err);
+    return res.status(geminiRes.status).json({
+      error: `Gemini API error (${geminiRes.status}): ${detail}`,
+      detail: err
+    });
   }
 
   const data = await geminiRes.json();

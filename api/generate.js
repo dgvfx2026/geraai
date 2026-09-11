@@ -213,7 +213,7 @@ async function handleGenerateImage(req, res, apiKey, payload) {
   const { prompt } = payload;
   if (!prompt) return res.status(400).json({ error: 'Missing prompt.' });
 
-  const IMAGE_MODEL = 'gemini-2.0-flash-exp';
+  const IMAGE_MODEL = 'gemini-3-pro-image';
 
   const geminiRes = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${IMAGE_MODEL}:generateContent?key=${apiKey}`,
